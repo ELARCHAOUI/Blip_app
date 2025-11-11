@@ -1,9 +1,15 @@
+# Dépendances principales
 streamlit==1.39.0
 transformers==4.46.1
 torch>=2.1
-Pillow
+Pillow>=9.5.0
+
+# Librairie Google Gemini
 google-genai>=0.1.0
+
+# Modules utiles pour compatibilité et performance
 accelerate
 safetensors
 python-dotenv
+
 
