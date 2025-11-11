@@ -3,4 +3,7 @@ transformers==4.46.1
 torch>=2.1
 Pillow
 google-genai>=0.1.0
+accelerate
+safetensors
 python-dotenv
+
