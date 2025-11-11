@@ -4,19 +4,18 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 import os
 
 # --- CONFIGURATION GEMINI ---
+# --- Configuration de l'API Gemini ---
 try:
     from google import genai
     from google.genai.errors import APIError
 
-    GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY"))
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
     if GEMINI_API_KEY:
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
         GEMINI_MODEL_NAME = "gemini-2.5-flash"
     else:
-        st.warning(
-            "⚠️ Clé API Gemini non configurée. Veuillez l’ajouter dans `.streamlit/secrets.toml`."
-        )
+        st.error("⚠️ La clé API Gemini n'est pas configurée dans les variables d'environnement.")
         gemini_client = None
 
 except ImportError:
@@ -125,5 +124,6 @@ if uploaded_file is not None:
             st.warning("Veuillez configurer une clé API Gemini pour activer la traduction.")
 
         st.markdown("---")
+
 
 st.caption("🧠 Architecture : BLIP (Vision) + Gemini (Traduction)")
