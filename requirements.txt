@@ -1,12 +1,11 @@
-# Interface et backend
+# Interface
 gradio==4.44.0
+
+# Modèles
 transformers==4.46.1
 torch>=2.1.0
 Pillow>=9.5.0
 
-# Performance
+# Optimisation
 safetensors
 accelerate
-
-# (optionnel, pour compat Python 3.13 seulement)
-# pyaudioop
