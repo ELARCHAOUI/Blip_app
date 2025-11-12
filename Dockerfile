@@ -1,5 +1,5 @@
 # Utiliser une image de base Debian récente pour Python 3.13
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 # Mettre à jour et installer FFmpeg (sera installé dans la couche d'image,
 # évitant les problèmes de lecture seule au moment de l'exécution/du build Render)
