@@ -1,12 +1,12 @@
 # Bibliothèques principales
 gradio==4.44.0
 transformers==4.46.1
-torch==2.3.1
+# CORRECTION : Mise à jour de Torch vers une version disponible pour Python 3.13
+torch==2.9.0 
 Pillow>=9.5.0
 accelerate>=0.20.0
 safetensors>=0.3.1
 
-# Dépendances audio/vidéo (pour Gradio, cause de l'erreur)
-# Ces paquets nécessitent l'installation de FFmpeg au niveau du système
+# Dépendances audio/vidéo (pour Gradio)
 pydub
 ffmpy
