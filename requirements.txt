@@ -1,12 +1,11 @@
-# Core dependencies
-streamlit==1.39.0
+# Interface web
+gradio==4.44.0
+
+# Modèles de génération et de traduction
 transformers==4.46.1
 torch>=2.1.0
 Pillow>=9.5.0
 
-# Google Gemini client
-google-genai>=0.1.0
-
-# Optional performance libraries
-accelerate
+# Performances et sécurité
 safetensors
+accelerate
