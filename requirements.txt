@@ -1,11 +1,7 @@
-# Bibliothèques principales (laissez pip trouver la version la plus compatible de Torch pour 3.11)
-gradio==4.44.0
+streamlit==1.39.0
 transformers==4.46.1
-torch
+torch>=2.1.0
 Pillow>=9.5.0
-accelerate>=0.20.0
-safetensors>=0.3.1
-
-# Dépendances audio/vidéo (nécessite FFmpeg)
-pydub
-ffmpy
+safetensors
+accelerate
+sentencepiece
