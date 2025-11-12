@@ -1,12 +1,11 @@
-# Bibliothèques principales
+# Bibliothèques principales (laissez pip trouver la version la plus compatible de Torch pour 3.11)
 gradio==4.44.0
 transformers==4.46.1
-# CORRECTION : Mise à jour de Torch vers une version disponible pour Python 3.13
-torch==2.9.0 
+torch
 Pillow>=9.5.0
 accelerate>=0.20.0
 safetensors>=0.3.1
 
-# Dépendances audio/vidéo (pour Gradio)
+# Dépendances audio/vidéo (nécessite FFmpeg)
 pydub
 ffmpy
