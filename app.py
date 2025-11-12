@@ -2,15 +2,19 @@ from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration, pipeline
 import gradio as gr
 import os
+import torch # Ajout optionnel pour vérifier la disponibilité de la RAM/GPU si besoin, mais surtout pour l'utilisation par les modèles Hugging Face
 
 # =========================================================
 # 🔹 Chargement des modèles
 # =========================================================
+# Les modèles sont téléchargés lors du premier lancement.
+# Ils sont volumineux, il faut s'assurer que l'instance Render a suffisamment de RAM.
 
+# Modèle BLIP pour le captioning (Génère en ANGLAIS)
 processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
 model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
 
-# Pipelines de traduction
+# Pipelines de traduction (Anglais -> Arabe et Anglais -> Français)
 translator_en_ar = pipeline("translation", model="Helsinki-NLP/opus-mt-en-ar")
 translator_en_fr = pipeline("translation", model="Helsinki-NLP/opus-mt-en-fr")
 
@@ -24,6 +28,7 @@ def generate_caption(img, use_detailed=False):
 
     params = {}
     if use_detailed:
+        # Paramètres pour une description plus longue et détaillée
         params = {
             "max_length": 80,
             "min_length": 20,
@@ -44,6 +49,7 @@ def translate_text(text, target_pipeline):
         translated = target_pipeline(text, max_length=512)
         return translated[0]["translation_text"]
     except Exception as e:
+        # En cas d'erreur (souvent due à des limites de ressources/timeout), on retourne l'erreur
         return f"Erreur de traduction : {e}"
 
 
@@ -51,8 +57,11 @@ def process_image(img, detail_level):
     """Retourne caption EN → FR → AR"""
     detailed = detail_level == "Détaillée"
     caption_en = generate_caption(img, detailed)
+    
+    # Exécution des traductions
     caption_fr = translate_text(caption_en, translator_en_fr)
     caption_ar = translate_text(caption_en, translator_en_ar)
+    
     return caption_en, caption_fr, caption_ar
 
 # =========================================================
@@ -74,7 +83,10 @@ demo = gr.Interface(
 )
 
 if __name__ == "__main__":
+    # Récupère le port fourni par l'environnement Render, ou utilise 7860 par défaut
+    PORT = int(os.environ.get("PORT", 7860))
+    # Lance le serveur Gradio écoutant sur toutes les interfaces ("0.0.0.0")
     demo.launch(
         server_name="0.0.0.0",
-        server_port=int(os.environ.get("PORT", 7860))
+        server_port=PORT
     )
