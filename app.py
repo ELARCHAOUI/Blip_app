@@ -1,23 +1,24 @@
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration, pipeline
 import gradio as gr
+import os
 
+# =========================================================
+# 🔹 Chargement des modèles
+# =========================================================
 
-# 1️⃣ Modèle BLIP (Captioning en anglais)
 processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
 model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
 
-# 2️⃣ Pipelines de traduction
-# Anglais → Arabe
+# Pipelines de traduction
 translator_en_ar = pipeline("translation", model="Helsinki-NLP/opus-mt-en-ar")
-# Anglais → Français
 translator_en_fr = pipeline("translation", model="Helsinki-NLP/opus-mt-en-fr")
 
-
-
-
+# =========================================================
+# ⚙️ Fonctions principales
+# =========================================================
 def generate_caption(img, use_detailed=False):
-    """Génère une description (caption) en anglais via BLIP"""
+    """Caption en anglais via BLIP"""
     img_input = Image.fromarray(img)
     inputs = processor(img_input, return_tensors="pt")
 
@@ -38,7 +39,7 @@ def generate_caption(img, use_detailed=False):
 
 
 def translate_text(text, target_pipeline):
-    """Traduit le texte anglais dans une autre langue avec le pipeline spécifié"""
+    """Traduit le texte anglais"""
     try:
         translated = target_pipeline(text, max_length=512)
         return translated[0]["translation_text"]
@@ -47,46 +48,33 @@ def translate_text(text, target_pipeline):
 
 
 def process_image(img, detail_level):
-    """Retourne la description en anglais, en français et en arabe"""
-    use_detailed = detail_level == "Détaillée"
-
-    # 1️⃣ Description en anglais
-    caption_en = generate_caption(img, use_detailed=use_detailed)
-
-    # 2️⃣ Traduction en français
+    """Retourne caption EN → FR → AR"""
+    detailed = detail_level == "Détaillée"
+    caption_en = generate_caption(img, detailed)
     caption_fr = translate_text(caption_en, translator_en_fr)
-
-    # 3️⃣ Traduction en arabe
     caption_ar = translate_text(caption_en, translator_en_ar)
-
     return caption_en, caption_fr, caption_ar
 
-
-
-
+# =========================================================
+# 🖥️ Interface Gradio
+# =========================================================
 demo = gr.Interface(
     fn=process_image,
     inputs=[
-        gr.Image(label="Importez une image à analyser"),
-        gr.Radio(
-            choices=["Simple", "Détaillée"],
-            value="Détaillée",
-            label="Niveau de détail de la description"
-        ),
+        gr.Image(label="🖼️ Choisir une image"),
+        gr.Radio(["Simple", "Détaillée"], value="Détaillée", label="🎚️ Niveau de détail")
     ],
     outputs=[
-        gr.Text(label="🇬🇧 1. Description (Anglais)"),
-        gr.Text(label="🇫🇷 2. Description (Français)"),
-        gr.Text(label="🌙 3. الوصف (Arabe)", rtl=True),
+        gr.Text(label="🇬🇧 Description (anglais)"),
+        gr.Text(label="🇫🇷 Description (français)"),
+        gr.Text(label="🌙 الوصف (arabe)", rtl=True)
     ],
-    title="Image Captioning Multilingue (EN → FR → AR)",
-    description="Téléversez une image pour obtenir automatiquement une description en anglais, français et arabe.",
-    allow_flagging="never"
+    title="🖼️ Image Captioning Multilingue (EN → FR → AR)",
+    description="Téléversez une image pour générer une description en anglais, puis la traduire en français et en arabe."
 )
 
-
 if __name__ == "__main__":
-    # host="0.0.0.0" pour Render / HuggingFace / Docker
-    import os
-    demo.launch(server_name="0.0.0.0",server_port=int(os.environ.get("PORT", 7860)))
-
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", 7860))
+    )
