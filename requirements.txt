@@ -1,11 +1,12 @@
-# Interface
+# Bibliothèques principales
 gradio==4.44.0
-
-# Modèles
 transformers==4.46.1
-torch>=2.1.0
+torch==2.3.1
 Pillow>=9.5.0
+accelerate>=0.20.0
+safetensors>=0.3.1
 
-# Optimisation
-safetensors
-accelerate
+# Dépendances audio/vidéo (pour Gradio, cause de l'erreur)
+# Ces paquets nécessitent l'installation de FFmpeg au niveau du système
+pydub
+ffmpy
