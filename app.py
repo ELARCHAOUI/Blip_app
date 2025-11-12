@@ -1,32 +1,31 @@
-from PIL import Image
 
-import gradio as gr
+import streamlit as st
+from PIL import Image
+from transformers import BlipProcessor, BlipForConditionalGeneration, pipeline
+import torch
 import os
 
-from transformers import BlipProcessor, BlipForConditionalGeneration
-import torch
 
 
+@st.cache_resource
+def load_models():
+    processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+    model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+    translator_en_ar = pipeline("translation", model="Helsinki-NLP/opus-mt-en-ar")
+    translator_en_fr = pipeline("translation", model="Helsinki-NLP/opus-mt-en-fr")
+    return processor, model, translator_en_fr, translator_en_ar
 
-processor = BlipProcessor.from_pretrained("Salesforce/blip-vqa-base")
-model = BlipForConditionalGeneration.from_pretrained(
-    "Salesforce/blip-vqa-base",
-    torch_dtype=torch.float16,
-    low_cpu_mem_usage=True
-)
 
-# Pipelines de traduction (Anglais -> Arabe et Anglais -> Français)
-translator_en_ar = pipeline("translation", model="Helsinki-NLP/opus-mt-en-ar")
-translator_en_fr = pipeline("translation", model="Helsinki-NLP/opus-mt-en-fr")
+processor, model, translator_en_fr, translator_en_ar = load_models()
+
 
 def generate_caption(img, use_detailed=False):
-    """Caption en anglais via BLIP"""
-    img_input = Image.fromarray(img)
+    """Génère une description anglaise via BLIP"""
+    img_input = img.convert("RGB")
     inputs = processor(img_input, return_tensors="pt")
 
     params = {}
     if use_detailed:
-        # Paramètres pour une description plus longue et détaillée
         params = {
             "max_length": 80,
             "min_length": 20,
@@ -42,50 +41,53 @@ def generate_caption(img, use_detailed=False):
 
 
 def translate_text(text, target_pipeline):
-    """Traduit le texte anglais"""
+    """Traduit un texte anglais avec le pipeline spécifié"""
     try:
         translated = target_pipeline(text, max_length=512)
         return translated[0]["translation_text"]
     except Exception as e:
-        # En cas d'erreur (souvent due à des limites de ressources/timeout), on retourne l'erreur
         return f"Erreur de traduction : {e}"
 
 
-def process_image(img, detail_level):
-    """Retourne caption EN → FR → AR"""
-    detailed = detail_level == "Détaillée"
-    caption_en = generate_caption(img, detailed)
-    
-    # Exécution des traductions
-    caption_fr = translate_text(caption_en, translator_en_fr)
-    caption_ar = translate_text(caption_en, translator_en_ar)
-    
-    return caption_en, caption_fr, caption_ar
 
-# =========================================================
-# 🖥️ Interface Gradio
-# =========================================================
-demo = gr.Interface(
-    fn=process_image,
-    inputs=[
-        gr.Image(label="🖼️ Choisir une image"),
-        gr.Radio(["Simple", "Détaillée"], value="Détaillée", label="🎚️ Niveau de détail")
-    ],
-    outputs=[
-        gr.Text(label="🇬🇧 Description (anglais)"),
-        gr.Text(label="🇫🇷 Description (français)"),
-        gr.Text(label="🌙 الوصف (arabe)", rtl=True)
-    ],
-    title="🖼️ Image Captioning Multilingue (EN → FR → AR)",
-    description="Téléversez une image pour générer une description en anglais, puis la traduire en français et en arabe."
-)
+st.set_page_config(page_title="Image Captioning Multilingue", layout="centered")
 
-if __name__ == "__main__":
-    # Récupère le port fourni par l'environnement Render, ou utilise 7860 par défaut
-    PORT = int(os.environ.get("PORT", 7860))
-    # Lance le serveur Gradio écoutant sur toutes les interfaces ("0.0.0.0")
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=PORT
+st.title("Image Captioning")
+st.caption("Modèle utilisé : **BLIP (Salesforce)** + **Helsinki-NLP** pour traductions")
+
+uploaded_file = st.file_uploader("📤 Téléverser une image :", type=["jpg", "jpeg", "png"])
+
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Aperçu de l'image", use_container_width=True)
+
+    detail_level = st.radio(
+        "Choisissez le niveau de détail de la description :",
+        ["Simple", "Détaillée"],
+        index=1,
+        horizontal=True,
     )
 
+    if st.button("Générer les descriptions"):
+        with st.spinner("Génération avec BLIP..."):
+            caption_en = generate_caption(image, use_detailed=(detail_level == "Détaillée"))
+
+        st.success("Description générée avec succès !")
+        st.subheader("🇬🇧 Description (Anglais)")
+        st.write(caption_en)
+
+        with st.spinner("Traduction en Français..."):
+            caption_fr = translate_text(caption_en, translator_en_fr)
+
+        with st.spinner("Traduction en Arabe..."):
+            caption_ar = translate_text(caption_en, translator_en_ar)
+
+        st.subheader("🇫🇷 Description (Français)")
+        st.write(caption_fr)
+
+        st.subheader("🌙 الوصف (Arabe)")
+        st.write(caption_ar)
+
+    st.divider()
+
+st.caption("🔧 Architecture : BLIP (Vision) + Helsinki-NLP (Traduction)")
